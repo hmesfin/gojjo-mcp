@@ -1,0 +1,52 @@
+# Core MCP Server Dependencies
+mcp==1.0.0
+pydantic>=2.0.0
+httpx>=0.25.0
+uvicorn>=0.23.0
+fastapi>=0.100.0
+
+# Caching & Storage
+redis>=5.0.0
+diskcache>=5.6.3
+
+# Web Scraping & API Integration
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+aiohttp>=3.8.0
+python-json-logger>=2.0.0
+
+# Data Processing
+python-dateutil>=2.8.0
+pyyaml>=6.0
+tomlkit>=0.12.0
+
+# Development & Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-httpx>=0.21.0
+pytest-mock>=3.11.0
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.5.0
+
+# Production Dependencies
+gunicorn>=21.2.0
+python-dotenv>=1.0.0
+structlog>=23.1.0
+rich>=13.5.0
+aiohttp>=3.8.0
+psutil>=5.9.0
+
+# Security & Rate Limiting
+slowapi>=0.1.9
+python-multipart>=0.0.6
+cryptography>=41.0.0
+
+# Documentation
+sphinx>=7.1.0
+sphinx-rtd-theme>=1.3.0
+
+# Optional: Database support for future scaling
+sqlalchemy>=2.0.0
+alembic>=1.12.0

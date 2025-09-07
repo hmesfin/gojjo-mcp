@@ -14,12 +14,23 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
-DOMAIN="mcp.gojjoapps.com"
-EMAIL="admin@gojjoapps.com"
-SERVER_USER="root"  # Change this to your server user
-SERVER_IP="178.156.186.160"  # Replace with your server IP
-PROJECT_DIR="/opt/mcp-server"
+# Load deployment configuration from environment file
+if [ ! -f ".env.production" ]; then
+    echo -e "${RED}ERROR: .env.production file not found!${NC}"
+    echo "Please create .env.production with your deployment configuration."
+    echo "See .env.production.example for template."
+    exit 1
+fi
+
+# Source environment variables
+source .env.production
+
+# Validate required variables
+if [ -z "$DOMAIN" ] || [ -z "$SERVER_IP" ] || [ -z "$SERVER_USER" ] || [ -z "$EMAIL" ]; then
+    echo -e "${RED}ERROR: Missing required deployment configuration in .env.production${NC}"
+    echo "Required variables: DOMAIN, SERVER_IP, SERVER_USER, EMAIL, PROJECT_DIR"
+    exit 1
+fi
 
 echo -e "${BLUE}Configuration:${NC}"
 echo "Domain: $DOMAIN"
@@ -27,11 +38,7 @@ echo "Server: $SERVER_USER@$SERVER_IP"
 echo "Project Directory: $PROJECT_DIR"
 echo
 
-# Check if we have the server IP configured
-if [ "$SERVER_IP" = "178.156.186.160" ]; then
-    echo -e "${RED}ERROR: Please update SERVER_IP in this script with your actual Hetzner server IP${NC}"
-    exit 1
-fi
+# Configuration loaded from .env.production
 
 # Check if we can connect to the server
 echo -e "${BLUE}Testing server connection...${NC}"

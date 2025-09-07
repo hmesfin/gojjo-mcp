@@ -24,49 +24,69 @@ nslookup mcp.gojjoapps.com
 
 ## 🔧 Configuration Steps
 
-### 1. Update Deployment Script
-Edit `deploy-to-hetzner.sh` and update:
+### 1. Create Production Environment File
+Copy the example and update with your values:
 ```bash
-SERVER_IP="YOUR_ACTUAL_HETZNER_SERVER_IP"  # Replace with real IP
-EMAIL="your-email@example.com"              # For Let's Encrypt notifications
+cp .env.production.example .env.production
+nano .env.production
+```
+
+Update these critical values in `.env.production`:
+```bash
+# Deployment Configuration
+DOMAIN=mcp.gojjoapps.com                    # Your domain
+SERVER_IP=YOUR_ACTUAL_HETZNER_SERVER_IP     # Your server IP
+SERVER_USER=root                            # SSH user (usually root)
+EMAIL=admin@gojjoapps.com                   # For Let's Encrypt notifications
+PROJECT_DIR=/opt/mcp-server                 # Server deployment directory
+
+# GitHub OAuth (from your GitHub App)
+GITHUB_CLIENT_ID=your_actual_client_id
+GITHUB_CLIENT_SECRET=your_actual_client_secret
+
+# Generate secure JWT secret
+JWT_SECRET=$(openssl rand -base64 64 | tr -d "=+/" | cut -c1-64)
 ```
 
 ### 2. GitHub OAuth Setup
-Your GitHub OAuth app should be configured with:
+Create a GitHub OAuth App with these settings:
 - **Application name**: MCP Documentation Server
-- **Homepage URL**: `https://mcp.gojjoapps.com`
-- **Authorization callback URL**: `https://mcp.gojjoapps.com/auth/github/callback`
+- **Homepage URL**: `https://your-domain.com`
+- **Authorization callback URL**: `https://your-domain.com/auth/github/callback`
 
-Current OAuth credentials in `.env.production`:
-- Client ID: `Ov23libL0xJY8V37jSxf`
-- Client Secret: `4a61b1a96b03cd6aea9f3a10c7e8716cdae6bd44`
+Copy the Client ID and Client Secret to your `.env.production` file.
 
-⚠️ **Security Note**: Change these for production!
-
-### 3. Generate Secure Secrets
+### 3. Security Verification
+Ensure your `.env.production` file has secure values:
 ```bash
-# Generate a secure JWT secret (64 characters)
-openssl rand -base64 64 | tr -d "=+/" | cut -c1-64
+# Check that sensitive values are not default/example values
+grep -E "(CLIENT_ID|CLIENT_SECRET|JWT_SECRET)" .env.production
 
-# Update .env.production with the new secret
-sed -i 's/JWT_SECRET=.*/JWT_SECRET=YOUR_NEW_SECRET/' .env.production
+# Verify file permissions (should not be world-readable)
+ls -la .env.production
+chmod 600 .env.production  # If needed
 ```
 
 ## 🚀 Deployment Process
 
 ### Automated Deployment
-Run the deployment script:
+The deployment script now reads configuration from `.env.production`:
 ```bash
+# Ensure .env.production exists and is configured
+ls -la .env.production
+
+# Run deployment (will load config from .env.production)
 ./deploy-to-hetzner.sh
 ```
 
 This script will:
-1. ✅ Test server connection
-2. 📦 Copy files to server
-3. 🐳 Install Docker/Docker Compose
-4. 🔐 Set up SSL certificates with Let's Encrypt
-5. 🏗️ Build and start services
-6. ✅ Run health checks
+1. ✅ Load configuration from `.env.production`
+2. ✅ Test server connection
+3. 📦 Copy files to server (excluding sensitive .env.production)
+4. 🐳 Install Docker/Docker Compose
+5. 🔐 Set up SSL certificates with Let's Encrypt
+6. 🏗️ Build and start services
+7. ✅ Run health checks
 
 ### Manual Deployment Steps
 If you prefer manual deployment:

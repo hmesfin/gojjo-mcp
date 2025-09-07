@@ -8,7 +8,7 @@ The MCP Server now includes GitHub OAuth authentication, providing a seamless de
 
 ### 1. GitHub App Setup
 
-Create a GitHub OAuth App at https://github.com/settings/applications/new:
+Create a GitHub OAuth App at <https://github.com/settings/applications/new>:
 
 - **Application name**: "Django Vue MCP Documentation Server"
 - **Homepage URL**: `http://localhost:8000` (development) or `https://mcp.gojjoapps.com` (production)
@@ -17,11 +17,13 @@ Create a GitHub OAuth App at https://github.com/settings/applications/new:
 ### 2. Environment Configuration
 
 Copy the OAuth environment template:
+
 ```bash
 cp .env.oauth.example .env.oauth
 ```
 
 Configure your OAuth settings:
+
 ```bash
 # GitHub OAuth App Credentials
 GITHUB_CLIENT_ID=your_github_client_id_here
@@ -51,6 +53,7 @@ JWT_SECRET=your_jwt_secret_32_characters_minimum_length
 ```
 
 This script will:
+
 - Validate configuration
 - Start Redis if needed
 - Install dependencies
@@ -58,7 +61,7 @@ This script will:
 
 ### 4. Test OAuth Flow
 
-1. Visit http://localhost:8000
+1. Visit <http://localhost:8000>
 2. Click "Continue with GitHub"
 3. Authorize the application
 4. Receive your API key and access dashboard
@@ -181,6 +184,7 @@ docker-compose -f docker-compose.secure.yml up -d
 ```
 
 The Docker configuration automatically:
+
 - Starts in HTTP_MODE for OAuth
 - Configures secure networking
 - Enables health checks
@@ -192,6 +196,7 @@ The Docker configuration automatically:
 ### User Metrics
 
 Track user engagement and API usage:
+
 - GitHub profile metadata (repos, followers, company)
 - Authentication success/failure rates
 - API key generation and usage patterns
@@ -200,6 +205,7 @@ Track user engagement and API usage:
 ### System Metrics
 
 Monitor OAuth system health:
+
 - OAuth callback success rates
 - Session creation/expiration rates  
 - Redis connection status
@@ -208,6 +214,7 @@ Monitor OAuth system health:
 ### Alerts
 
 Configure monitoring for:
+
 - High OAuth failure rates
 - Unusual user registration patterns
 - Redis connection issues
@@ -224,6 +231,7 @@ For production deployment:
    - Callback URL: `https://mcp.gojjoapps.com/auth/github/callback`
 
 2. Configure environment:
+
    ```bash
    BASE_URL=https://mcp.gojjoapps.com
    HTTP_MODE=true
@@ -265,6 +273,7 @@ For production deployment:
 ### Debug Mode
 
 Enable detailed logging:
+
 ```bash
 export LOG_LEVEL=DEBUG
 python src/web_mcp_server.py
@@ -273,6 +282,7 @@ python src/web_mcp_server.py
 ### Health Checks
 
 Monitor system health:
+
 ```bash
 # Basic health
 curl http://localhost:8080/health
@@ -386,6 +396,7 @@ async function fetchDjangoVersion() {
 ### OAuth-specific Testing
 
 When contributing OAuth features:
+
 - Test with multiple GitHub accounts
 - Verify role assignment logic
 - Test session management edge cases

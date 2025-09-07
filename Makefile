@@ -22,25 +22,25 @@ install:
 
 # Docker commands
 build:
-	docker-compose build
+	docker compose build
 
 run:
-	docker-compose up
+	docker compose up
 
 dev:
-	docker-compose up -d
+	docker compose up -d
 	@echo "Development environment started. Use 'make logs' to view logs."
 
 clean:
-	docker-compose down -v
+	docker compose down -v
 	docker system prune -f
 
 logs:
-	docker-compose logs -f mcp-server
+	docker compose logs -f mcp-server
 
 # Testing
 test:
-	docker-compose run --rm mcp-server python -m pytest tests/ -v
+	docker compose run --rm mcp-server python -m pytest tests/ -v
 
 test-local:
 	python src/test_server.py
@@ -56,17 +56,17 @@ format:
 
 # Development helpers
 shell:
-	docker-compose run --rm mcp-server /bin/bash
+	docker compose run --rm mcp-server /bin/bash
 
 redis-cli:
-	docker-compose exec redis redis-cli
+	docker compose exec redis redis-cli
 
 # Production deployment
 deploy-prod:
-	docker-compose -f docker-compose.prod.yml up -d
+	docker compose -f docker-compose.prod.yml up -d
 
 stop-prod:
-	docker-compose -f docker-compose.prod.yml down
+	docker compose -f docker-compose.prod.yml down
 
 # Environment setup
 setup-env:

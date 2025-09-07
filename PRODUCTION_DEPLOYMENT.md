@@ -106,9 +106,9 @@ cd /opt/mcp-server
 curl -fsSL https://get.docker.com -o get-docker.sh
 sh get-docker.sh
 
-# Install Docker Compose
-curl -L "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
+# Install Docker Compose plugin
+apt-get update
+apt-get install -y docker-compose-plugin
 ```
 
 #### 3. Configure Environment
@@ -126,7 +126,7 @@ chmod 600 .env.production
 ./init-letsencrypt.sh
 
 # Or if certificates exist, just start services
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ## 🔍 Post-Deployment Verification
@@ -137,10 +137,10 @@ docker-compose -f docker-compose.prod.yml up -d
 curl https://mcp.gojjoapps.com/health
 
 # Service status
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 
 # View logs
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 ```
 
 ### OAuth Flow Test
@@ -171,7 +171,7 @@ docker logs django-vue-mcp-nginx -f
 docker logs django-vue-mcp-redis-prod -f
 
 # All services
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker compose.prod.yml logs -f
 ```
 
 ### Update Deployment
@@ -180,15 +180,15 @@ docker-compose -f docker-compose.prod.yml logs -f
 git pull origin main
 
 # Rebuild and restart
-docker-compose -f docker-compose.prod.yml build --no-cache
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker compose.prod.yml build --no-cache
+docker compose -f docker compose.prod.yml up -d
 ```
 
 ### SSL Certificate Renewal
 Certificates automatically renew via the certbot container. To manually renew:
 ```bash
-docker-compose -f docker-compose.prod.yml exec certbot certbot renew
-docker-compose -f docker-compose.prod.yml exec nginx nginx -s reload
+docker compose -f docker compose.prod.yml exec certbot certbot renew
+docker compose -f docker compose.prod.yml exec nginx nginx -s reload
 ```
 
 ## 🛡️ Security Features
@@ -218,10 +218,10 @@ docker-compose -f docker-compose.prod.yml exec nginx nginx -s reload
 #### SSL Certificate Failed
 ```bash
 # Check certbot logs
-docker-compose -f docker-compose.prod.yml logs certbot
+docker compose -f docker compose.prod.yml logs certbot
 
 # Manual certificate request
-docker-compose -f docker-compose.prod.yml run --rm certbot \
+docker compose -f docker compose.prod.yml run --rm certbot \
   certbot certonly --webroot --webroot-path=/var/www/certbot \
   --email admin@gojjoapps.com --agree-tos --no-eff-email \
   -d mcp.gojjoapps.com
@@ -232,28 +232,28 @@ docker-compose -f docker-compose.prod.yml run --rm certbot \
 2. Verify callback URL matches exactly
 3. Check environment variables:
    ```bash
-   docker-compose -f docker-compose.prod.yml exec mcp-server env | grep GITHUB
+   docker compose -f docker compose.prod.yml exec mcp-server env | grep GITHUB
    ```
 
 #### Service Won't Start
 ```bash
 # Check service status
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker compose.prod.yml ps
 
 # Restart specific service
-docker-compose -f docker-compose.prod.yml restart mcp-server
+docker compose -f docker compose.prod.yml restart mcp-server
 
 # View detailed logs
-docker-compose -f docker-compose.prod.yml logs mcp-server
+docker compose -f docker compose.prod.yml logs mcp-server
 ```
 
 #### Redis Connection Issues
 ```bash
 # Test Redis connection
-docker-compose -f docker-compose.prod.yml exec redis redis-cli ping
+docker compose -f docker compose.prod.yml exec redis redis-cli ping
 
 # Check Redis logs
-docker-compose -f docker-compose.prod.yml logs redis
+docker compose -f docker compose.prod.yml logs redis
 ```
 
 ## 📈 Performance Optimization
@@ -294,7 +294,7 @@ After deployment, verify:
 ## 🆘 Support
 
 If you encounter issues:
-1. Check logs first: `docker-compose logs -f`
+1. Check logs first: `docker compose logs -f`
 2. Verify environment variables
 3. Test each service individually
 4. Check GitHub OAuth app configuration

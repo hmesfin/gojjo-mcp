@@ -67,10 +67,10 @@ ssh $SERVER_USER@$SERVER_IP << 'EOF'
         systemctl start docker
     fi
     
-    if ! command -v docker-compose &> /dev/null; then
-        echo "Installing Docker Compose..."
-        curl -L "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
+    if ! docker compose version &> /dev/null; then
+        echo "Installing Docker Compose plugin..."
+        apt-get update
+        apt-get install -y docker-compose-plugin
     fi
 EOF
 
@@ -118,7 +118,7 @@ ssh $SERVER_USER@$SERVER_IP << EOF
     
     # Build and start services
     echo "Building Docker images..."
-    docker-compose -f docker-compose.prod.yml build
+    docker compose -f docker-compose.prod.yml build
     
     # Initialize SSL certificates
     echo "Setting up SSL certificates..."
@@ -126,7 +126,7 @@ ssh $SERVER_USER@$SERVER_IP << EOF
         ./init-letsencrypt.sh
     else
         echo "SSL certificates already exist, starting services..."
-        docker-compose -f docker-compose.prod.yml up -d
+        docker compose -f docker-compose.prod.yml up -d
     fi
     
     echo "Deployment complete!"
@@ -167,5 +167,5 @@ echo "3. Configure backups"
 echo "4. Update DNS if needed"
 echo
 echo -e "${BLUE}Log monitoring:${NC}"
-echo "ssh $SERVER_USER@$SERVER_IP 'docker-compose -f $PROJECT_DIR/docker-compose.prod.yml logs -f'"
+echo "ssh $SERVER_USER@$SERVER_IP 'docker compose -f $PROJECT_DIR/docker-compose.prod.yml logs -f'"
 echo

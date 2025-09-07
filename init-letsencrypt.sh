@@ -3,8 +3,9 @@
 # Let's Encrypt SSL Certificate Setup for Production
 # Run this script on your Hetzner server to set up SSL certificates
 
-if ! [ -x "$(command -v docker-compose)" ]; then
-  echo 'Error: docker-compose is not installed.' >&2
+if ! docker compose version &> /dev/null; then
+  echo 'Error: docker compose is not available.' >&2
+  echo 'Please install Docker Compose plugin: apt-get install docker-compose-plugin'
   exit 1
 fi
 
@@ -55,7 +56,7 @@ EOF
 
 # Start nginx with temporary config
 echo "Starting nginx for certificate generation..."
-docker-compose -f docker-compose.prod.yml run --rm --service-ports -d --name nginx-temp nginx nginx -g 'daemon off;' -c /etc/nginx/nginx.temp.conf
+docker compose -f docker-compose.prod.yml run --rm --service-ports -d --name nginx-temp nginx nginx -g 'daemon off;' -c /etc/nginx/nginx.temp.conf
 
 # Wait a bit for nginx to start
 sleep 5
@@ -70,7 +71,7 @@ fi
 
 # Request certificate
 echo "Requesting certificate for $domain..."
-docker-compose -f docker-compose.prod.yml run --rm certbot \
+docker compose -f docker-compose.prod.yml run --rm certbot \
   certbot certonly --webroot \
   --webroot-path=/var/www/certbot \
   --email $email \
@@ -92,7 +93,7 @@ if [ -d "./certbot/conf/live/$domain" ]; then
   rm ./nginx/nginx.temp.conf
   
   echo "Starting production services..."
-  docker-compose -f docker-compose.prod.yml up -d
+  docker compose -f docker-compose.prod.yml up -d
   
   echo "### SSL setup complete! Your site should now be available at https://$domain"
 else

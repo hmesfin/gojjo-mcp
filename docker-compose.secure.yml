@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Secure MCP Server with OAuth
   mcp-server:

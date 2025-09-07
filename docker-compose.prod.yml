@@ -1,27 +1,33 @@
 version: '3.8'
 
 services:
-  # Production MCP Server with HTTP wrapper
+  # Production MCP Server with OAuth authentication
   mcp-server:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: django-vue-mcp-server-prod
-    ports:
-      - "8000:8000"
     environment:
+      - HTTP_MODE=true
       - REDIS_URL=redis://redis:6379
+      - BASE_URL=https://mcp.gojjoapps.com
       - ENVIRONMENT=production
-      - MCP_SERVER_HOST=0.0.0.0
-      - MCP_SERVER_PORT=8000
+      - WEB_PORT=8000
+      - HEALTH_PORT=8080
     env_file:
       - .env.production
     depends_on:
-      - redis
-    restart: always
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - mcp-network
-    command: ["python", "src/production_mcp_server.py"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: "json-file"
       options:
@@ -32,22 +38,24 @@ services:
   redis:
     image: redis:7-alpine
     container_name: django-vue-mcp-redis-prod
-    ports:
-      - "127.0.0.1:6379:6379"
     volumes:
       - redis_prod_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
-    command: redis-server /usr/local/etc/redis/redis.conf
-    restart: always
+    command: redis-server --appendonly yes
+    restart: unless-stopped
     networks:
       - mcp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     logging:
       driver: "json-file"
       options:
         max-size: "5m"
         max-file: "3"
 
-  # Nginx Reverse Proxy
+  # Nginx Reverse Proxy with SSL
   nginx:
     image: nginx:alpine
     container_name: django-vue-mcp-nginx
@@ -55,14 +63,25 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/ssl/certs:ro
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
       - ./logs/nginx:/var/log/nginx
     depends_on:
       - mcp-server
-    restart: always
+    restart: unless-stopped
     networks:
       - mcp-network
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  # Let's Encrypt SSL Certificate Management
+  certbot:
+    image: certbot/certbot
+    container_name: django-vue-mcp-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
   redis_prod_data:

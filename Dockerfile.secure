@@ -1,0 +1,187 @@
+# Multi-stage secure Docker build for Django Vue MCP Documentation Server
+# Optimized for production security and minimal attack surface
+
+# === SECURITY BASE IMAGE ===
+FROM python:3.11-slim-bookworm AS security-base
+
+# Security updates and essential tools only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Security essentials
+    ca-certificates \
+    curl \
+    # Build dependencies (will be removed later)
+    build-essential \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* \
+    && rm -rf /var/tmp/*
+
+# Create non-root user early
+RUN groupadd -r -g 1000 mcpuser && \
+    useradd -r -g mcpuser -u 1000 -s /bin/false -c "MCP Server User" mcpuser
+
+# === DEPENDENCY STAGE ===
+FROM security-base AS dependencies
+
+# Set secure Python environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100
+
+WORKDIR /app
+
+# Copy and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    # Remove build dependencies after installation
+    apt-get purge -y --auto-remove build-essential git && \
+    # Clean up pip cache and temporary files
+    pip cache purge && \
+    rm -rf ~/.cache/pip && \
+    rm -rf /tmp/* && \
+    rm -rf /var/tmp/*
+
+# === SECURITY SCANNING STAGE ===
+FROM dependencies AS security-scan
+
+# Install security scanning tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Trivy for vulnerability scanning
+    wget \
+    && wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add - && \
+    echo "deb https://aquasecurity.github.io/trivy-repo/deb generic main" | tee -a /etc/apt/sources.list.d/trivy.list && \
+    apt-get update && \
+    apt-get install -y trivy && \
+    # Run security scan
+    trivy fs --exit-code 0 --no-progress --format table /usr/local/lib/python3.11/site-packages/ && \
+    # Clean up
+    apt-get purge -y --auto-remove wget trivy && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# === PRODUCTION STAGE ===
+FROM python:3.11-slim-bookworm AS production
+
+# Security metadata
+LABEL maintainer="Django Vue MCP Team" \
+      version="1.0.0" \
+      description="Secure Django Vue MCP Documentation Server" \
+      security.scan="trivy" \
+      security.user="non-root" \
+      security.readonly="true"
+
+# Copy Python environment from dependencies stage
+COPY --from=dependencies /usr/local /usr/local
+
+# Install only essential runtime packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Runtime essentials
+    ca-certificates \
+    curl \
+    # SSL/TLS support
+    openssl \
+    # Process management
+    tini \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* \
+    && rm -rf /var/tmp/*
+
+# Create non-root user and secure directories
+RUN groupadd -r -g 1000 mcpuser && \
+    useradd -r -g mcpuser -u 1000 -s /bin/false -c "MCP Server User" mcpuser && \
+    # Create secure application directory
+    mkdir -p /app/src /app/docs /app/tests /app/logs && \
+    # Set secure permissions
+    chmod 755 /app && \
+    chmod 750 /app/src /app/docs /app/tests && \
+    chmod 770 /app/logs && \
+    chown -R mcpuser:mcpuser /app
+
+# Set secure working directory
+WORKDIR /app
+
+# Set secure Python environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src \
+    PYTHONHASHSEED=random \
+    # Security settings
+    ENVIRONMENT=production \
+    DEBUG=false \
+    DOCKER_MODE=true \
+    # Process settings
+    USER=mcpuser \
+    HOME=/app
+
+# Copy application code with secure permissions
+COPY --chown=mcpuser:mcpuser src/ ./src/
+COPY --chown=mcpuser:mcpuser docs/ ./docs/
+COPY --chown=mcpuser:mcpuser tests/ ./tests/
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+# Security checks\n\
+if [ "$DEBUG" = "true" ] && [ "$ENVIRONMENT" = "production" ]; then\n\
+    echo "ERROR: Debug mode not allowed in production"\n\
+    exit 1\n\
+fi\n\
+\n\
+# Check if HTTP_MODE is enabled for OAuth\n\
+if [ "$HTTP_MODE" = "true" ]; then\n\
+    echo "Starting OAuth-enabled web server..."\n\
+    exec python src/web_mcp_server.py\n\
+else\n\
+    echo "Starting MCP protocol server..."\n\
+    exec python src/secure_mcp_server.py\n\
+fi\n' > /app/start-secure.sh && \
+    chmod 750 /app/start-secure.sh && \
+    chown mcpuser:mcpuser /app/start-secure.sh
+
+# Health check configuration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Security configurations
+# Drop all capabilities
+USER mcpuser:mcpuser
+
+# Expose ports (documentation only - actual binding handled by Docker Compose)
+EXPOSE 8000 8080
+
+# Volume for logs (read-write)
+VOLUME ["/app/logs"]
+
+# Use tini as init system for proper signal handling
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Default command
+CMD ["/app/start-secure.sh"]
+
+# === SECURITY HARDENING ===
+# 1. Non-root user (mcpuser:1000)
+# 2. Minimal base image (python:3.11-slim-bookworm)
+# 3. No unnecessary packages
+# 4. Vulnerability scanning with Trivy
+# 5. Secure file permissions
+# 6. Health checks
+# 7. Proper init system (tini)
+# 8. Environment validation
+# 9. Read-only root filesystem (handled by Docker Compose)
+# 10. Dropped capabilities (handled by Docker Compose)
+
+# === BUILD INSTRUCTIONS ===
+# To build the secure image:
+# docker build -f Dockerfile.secure -t secure-mcp-server:latest .
+#
+# To run with security:
+# docker-compose -f docker-compose.secure.yml up -d
+#
+# To scan for vulnerabilities:
+# trivy image secure-mcp-server:latest

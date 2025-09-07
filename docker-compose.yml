@@ -15,7 +15,13 @@ services:
       - REDIS_URL=redis://redis:6379
       - ENVIRONMENT=development
       - DOCKER_MODE=true
+      - HTTP_MODE=true  # Enable OAuth web mode
       - HEALTH_PORT=8080
+      - WEB_PORT=8000
+      - BASE_URL=http://localhost:8000
+      - GITHUB_CLIENT_ID=Ov23libL0xJY8V37jSxf
+      - GITHUB_CLIENT_SECRET=4a61b1a96b03cd6aea9f3a10c7e8716cdae6bd44
+      - JWT_SECRET=docker_jwt_secret_minimum_32_characters_long_for_security
     depends_on:
       - redis
     restart: unless-stopped

@@ -26,6 +26,10 @@ COPY src/ ./src/
 COPY docs/ ./docs/
 COPY tests/ ./tests/
 
+# Create startup script that handles both modes
+RUN echo '#!/bin/bash\nset -e\nif [ "$HTTP_MODE" = "true" ]; then\n  echo "Starting OAuth web server (simple)..."\n  exec python src/web_mcp_server_simple.py\nelse\n  echo "Starting MCP protocol server..."\n  exec python src/django_vue_mcp_server.py\nfi' > /app/start.sh && \
+    chmod +x /app/start.sh
+
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 RUN chown -R appuser:appuser /app
@@ -38,5 +42,5 @@ EXPOSE 8000 8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Default command - can be overridden
-CMD ["python", "src/django_vue_mcp_server.py"]
+# Default command - uses startup script to choose mode
+CMD ["/app/start.sh"]

@@ -23,8 +23,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY src/ ./src/
-COPY docs/ ./docs/
-COPY tests/ ./tests/
+
+# Copy documentation and configuration
+COPY . .
+
+# Remove unnecessary files to keep image clean
+RUN rm -rf .git .env* __pycache__ *.pyc .pytest_cache .coverage \
+    && find . -name "*.pyc" -delete \
+    && find . -name "__pycache__" -delete
 
 # Create startup script that handles both modes
 RUN echo '#!/bin/bash\nset -e\nif [ "$HTTP_MODE" = "true" ]; then\n  echo "Starting OAuth web server (simple)..."\n  exec python src/web_mcp_server_simple.py\nelse\n  echo "Starting MCP protocol server..."\n  exec python src/django_vue_mcp_server.py\nfi' > /app/start.sh && \

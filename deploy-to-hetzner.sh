@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 DOMAIN="mcp.gojjoapps.com"
 EMAIL="admin@gojjoapps.com"
 SERVER_USER="root"  # Change this to your server user
-SERVER_IP="YOUR_HETZNER_SERVER_IP"  # Replace with your server IP
+SERVER_IP="178.156.186.160"  # Replace with your server IP
 PROJECT_DIR="/opt/mcp-server"
 
 echo -e "${BLUE}Configuration:${NC}"
@@ -28,7 +28,7 @@ echo "Project Directory: $PROJECT_DIR"
 echo
 
 # Check if we have the server IP configured
-if [ "$SERVER_IP" = "YOUR_HETZNER_SERVER_IP" ]; then
+if [ "$SERVER_IP" = "178.156.186.160" ]; then
     echo -e "${RED}ERROR: Please update SERVER_IP in this script with your actual Hetzner server IP${NC}"
     exit 1
 fi
